@@ -45,7 +45,7 @@ flowchart LR
 
 ![Histograms of worst area, worst smoothness and mean texture by diagnosis](images/feature_distributions.png)
 
-Worst area separates the two groups most clearly. Smoothness and texture overlap much more, but they still add information. The trained three-feature model agrees, since its standardized weights are largest for area:
+Worst area shows the clearest separation in these histograms. Smoothness and texture overlap more. In this fitted logistic regression model, area has the largest standardized coefficient magnitude:
 
 | Feature | Weight |
 | --- | ---: |
@@ -77,25 +77,24 @@ One split of 114 samples can be lucky or unlucky, because a single sample moves 
 
 ![Cross-validated accuracy and recall for both models](images/model_comparison.png)
 
-| Metric (mean ± SD) | All 30 features | Paper's 3 features |
+| Metric | All 30 features | Paper's 3 features |
 | --- | ---: | ---: |
-| Accuracy | 97.8% ± 1.4 | 96.3% ± 1.6 |
-| Malignant recall | 95.6% ± 3.0 | 92.4% ± 4.1 |
-| Benign recall | 99.1% ± 1.0 | 98.7% ± 1.4 |
-| ROC AUC | 0.994 | 0.991 |
+| Accuracy (mean ± SD) | 97.8% ± 1.4 | 96.3% ± 1.6 |
+| Malignant recall (mean ± SD) | 95.6% ± 3.0 | 92.4% ± 4.1 |
+| Benign recall (mean ± SD) | 99.1% ± 1.0 | 98.7% ± 1.4 |
+| ROC AUC (mean) | 0.994 | 0.991 |
 
 ### What this means
 
-- **The 30-feature model performed better here.** Its largest cross-validated advantage is on malignant recall, which matters most because a missed cancer is the costliest error. On the single test set, it missed 1 malignant case versus 2 for the three-feature model.
+- **The 30-feature model performed better here.** Its largest cross-validated difference is in malignant recall. Missing a malignant case is an important error to examine in this diagnostic task. On the single test set, it missed 1 malignant case versus 2 for the three-feature model.
 - **Three features still do remarkably well.** Keeping 10% of the inputs retains most of the performance, and a smaller model is easier to interpret.
 - **The paper's 97.0% is close to this experiment's 96.3%.** The two are not a like-for-like comparison, because the paper used a linear-programming classifier and its own evaluation rather than logistic regression with this cross-validation setup.
 
 ### Limitations
 
-- The fold-to-fold ranges overlap, so the gap between the models is modest.
+- The 100 cross-validation scores come from repeated splits of the same 569 samples, not 100 independent datasets. They do not establish how either model will perform on new clinical data.
 - The paper chose its three features from these same 569 samples, so the three-feature scores may be slightly optimistic.
-- Everything was evaluated on one dataset from one institution. Performance on new clinical data is unknown.
-- Both models use the default 0.5 decision threshold. A screening tool would likely lower the threshold for flagging malignancy to catch more cancers, at the cost of more false alarms.
+- The models use the default decision threshold. Changing the threshold for predicting malignancy would change the tradeoff between missed malignant cases and false alarms; this project does not choose a clinical threshold.
 
 ## Run it yourself
 

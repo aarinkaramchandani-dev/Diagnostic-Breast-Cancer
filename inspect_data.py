@@ -16,7 +16,7 @@ print("target name:", target_name)
 print("X shape:", X.shape)
 print("Y shape:", Y.shape)
 
-print("X and Y sample:", feature_names, target_name[Y[0]])
+print("X sample names and Y sample:", feature_names, target_name[Y[0]])
 
 print("Y distribution:", sum(Y == 0), "malignant,", sum(Y == 1), "benign")
 print("Y distribution:", sum(Y == 0)/len(Y) * 100, "malignant,", sum(Y == 1)/len(Y) * 100, "benign")

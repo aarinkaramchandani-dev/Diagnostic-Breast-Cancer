@@ -2,7 +2,7 @@
 
 This project trains a logistic regression model to classify breast masses as **malignant** or **benign** from measurements of cell nuclei. It compares a model using all 30 measurements against a three-feature model based on a 1994 paper by the researchers behind the dataset.
 
-> **Key result:** Using all 30 features reached **97.8%** cross-validated accuracy and caught **95.6%** of cancers. The paper's three features came close with **96.3%** accuracy, but caught fewer cancers at **92.4%**.
+> **Key result:** On the same 114-sample test set, the 30-feature model classified **112** samples correctly (**98.2%**) and missed one malignant case. The three-feature model classified **108** correctly (**94.7%**) and missed two malignant cases. Repeated cross-validation, reported below, shows the same ordering with a smaller gap: **97.8%** versus **96.3%** accuracy.
 
 *This is a learning project and is not a medical device. It should not be used to make diagnostic decisions.*
 
@@ -12,7 +12,7 @@ The project uses the Breast Cancer Wisconsin (Diagnostic) dataset, loaded throug
 
 | Property | Value |
 | --- | --- |
-| Patients | 569 |
+| Samples | 569 |
 | Malignant | 212 (37.3%) |
 | Benign | 357 (62.7%) |
 | Features | 30 |
@@ -33,15 +33,15 @@ flowchart LR
 ```
 
 1. **Split the data.** 455 samples are used for training and 114 for testing. Stratifying keeps the malignant and benign proportions the same in both sets.
-2. **Scale the features.** `StandardScaler` gives each feature a mean of 0 and a standard deviation of 1. Area values reach the thousands while smoothness values are around 0.1, so without scaling the features would not be on a comparable footing. The scaler is fit only on training data so that no information leaks in from the test set.
+2. **Scale the features.** `StandardScaler` gives each feature in the training data a mean of 0 and a standard deviation of 1. Area values reach the thousands while smoothness values are around 0.1, so without scaling the features would not be on a comparable footing. The test data is transformed with the training statistics, so its values won't have exactly that mean and standard deviation, and no information leaks in from the test set.
 3. **Train the model.** Logistic regression learns one weight per feature and turns the weighted sum into a probability of each diagnosis.
-4. **Evaluate it.** The model is scored on the 114 held-out patients. A confusion matrix shows which kinds of mistakes it makes.
+4. **Evaluate it.** The model is scored on the 114 held-out samples. A confusion matrix shows which kinds of mistakes it makes.
 
-## Testing the paper's idea
+## An experiment inspired by the paper
 
 [Mangasarian, Street and Wolberg (1994)](https://cdn.aaai.org/Symposia/Spring/1994/SS-94-01/SS94-01-019.pdf) found that reducing the number of inputs improved generalization. Their best diagnostic classifier used a single separating plane and three features: **extreme area, extreme smoothness and mean texture**. They reported **97.0%** cross-validated accuracy.
 
-`train_model_paper.py` tests those same three features with logistic regression. In scikit-learn, the paper's "extreme" values are named "worst".
+`train_model_paper.py` uses those same three features but trains logistic regression, so it is not a replication of the paper's method. In scikit-learn, the paper's "extreme" values are named "worst".
 
 ![Histograms of worst area, worst smoothness and mean texture by diagnosis](images/feature_distributions.png)
 
@@ -59,7 +59,7 @@ scikit-learn encodes benign as 1, so a negative weight means that higher values 
 
 ### Single test split
 
-Both models were tested on the same 114 patients.
+Both models were tested on the same 114 samples.
 
 ![Confusion matrices for the 30-feature and three-feature models](images/confusion_matrices.png)
 
@@ -73,7 +73,7 @@ Both models were tested on the same 114 patients.
 
 ### Cross-validation
 
-One split of 114 patients can be lucky or unlucky, because a single patient moves accuracy by almost a full percentage point. For a more stable comparison, each model was also evaluated with 5-fold stratified cross-validation repeated 20 times, for 100 train/test rounds. Scaling was refit inside every round.
+One split of 114 samples can be lucky or unlucky, because a single sample moves accuracy by almost a full percentage point. For a more stable comparison, `evaluate_models.py` also evaluates each model with 5-fold stratified cross-validation repeated 20 times, for 100 train/test rounds. Scaling is refit inside every round.
 
 ![Cross-validated accuracy and recall for both models](images/model_comparison.png)
 
@@ -86,14 +86,14 @@ One split of 114 patients can be lucky or unlucky, because a single patient move
 
 ### What this means
 
-- **The 30-feature model performed better here.** Its largest advantage is on malignant recall, which matters most because a missed cancer is the costliest error. Across the full dataset, that rate corresponds to roughly 9 missed cancers versus 16 for the three-feature model.
+- **The 30-feature model performed better here.** Its largest cross-validated advantage is on malignant recall, which matters most because a missed cancer is the costliest error. On the single test set, it missed 1 malignant case versus 2 for the three-feature model.
 - **Three features still do remarkably well.** Keeping 10% of the inputs retains most of the performance, and a smaller model is easier to interpret.
-- **The paper's 97.0% is close to this replication's 96.3%.** The two are not a like-for-like comparison, because the paper used a linear-programming classifier rather than logistic regression.
+- **The paper's 97.0% is close to this experiment's 96.3%.** The two are not a like-for-like comparison, because the paper used a linear-programming classifier and its own evaluation rather than logistic regression with this cross-validation setup.
 
 ### Limitations
 
 - The fold-to-fold ranges overlap, so the gap between the models is modest.
-- The paper chose its three features from these same 569 patients, so the three-feature scores may be slightly optimistic.
+- The paper chose its three features from these same 569 samples, so the three-feature scores may be slightly optimistic.
 - Everything was evaluated on one dataset from one institution. Performance on new clinical data is unknown.
 - Both models use the default 0.5 decision threshold. A screening tool would likely lower the threshold for flagging malignancy to catch more cancers, at the cost of more false alarms.
 
@@ -109,9 +109,10 @@ pip install scikit-learn matplotlib numpy
 python inspect_data.py         # explore the dataset
 python train_model.py          # train on all 30 features
 python train_model_paper.py    # train on the paper's 3 features
+python evaluate_models.py      # reproduce the README's metrics and figures
 ```
 
-Each script prints its results and opens a plot window. Close the window to end the script.
+The first three scripts print their results and open a plot window. Close the window to end the script. `evaluate_models.py` prints every reported metric and saves the figures to `images/`.
 
 ## Project structure
 
@@ -120,6 +121,7 @@ Each script prints its results and opens a plot window. Close the window to end 
 ├── inspect_data.py         # Dataset summary and mean radius histogram
 ├── train_model.py          # 30-feature logistic regression
 ├── train_model_paper.py    # Three-feature model based on the paper
+├── evaluate_models.py      # Cross-validation, README metrics and figures
 ├── images/                 # Figures used in this README
 └── README.md
 ```
